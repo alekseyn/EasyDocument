@@ -32,21 +32,17 @@ class CustomEasyDocument: EasyDocument {
 	// MARK: - EasyDocumentTemplate
 	
 	override var template: NSMutableDictionary {
-		get {
-			let template = NSMutableDictionary.init(capacity: 4)
-			
-			template["version"] 	= CurrentFormatVersion
-			template["namespace"] 	= "com.yourcompanyname.app"
-			template["token"] 		= UUID().uuidString
-			template["copyright"] 	= CurrentCopyrightMessage
-			
-			return template
-		}
+		let template = NSMutableDictionary.init(capacity: 4)
+		
+		template["version"] 	= CurrentFormatVersion
+		template["namespace"] 	= "com.yourcompanyname.app"
+		template["token"] 		= UUID().uuidString
+		template["copyright"] 	= CurrentCopyrightMessage
+		
+		return template
 	}
 	
-	override var templateObjectsKey: String {
-		get { return "objects" }
-	}
+	override var templateObjectsKey: String { "objects" }
 	
 	override func isValid(template dictionary: NSDictionary) -> Bool {
 		guard 	let version = dictionary["version"] as? String,

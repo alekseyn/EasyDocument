@@ -62,8 +62,13 @@ final class EasyDocumentTests: XCTestCase {
 		XCTAssertEqual(duplicateEvent?.detail?.title == "Test Event", true)
 	}
 
+	func testDocument() {
+		
+	}
+	
 	static var allTests = [
 		("testDeepCopy", testDeepCopy),
 		("testUniquenessAndValidity", testUniquenessAndValidity),
+		("testDocument", testDocument),
     ]
 }

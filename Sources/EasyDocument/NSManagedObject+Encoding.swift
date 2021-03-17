@@ -195,21 +195,21 @@ extension NSManagedObject {
 		return dictionary
 	}
 	
-	public func archiveAsDictionary(fresh: Bool = true) -> NSDictionary? {
-		var archiveDictionary: NSDictionary?
+	public func dictionaryArchive(fresh: Bool = true) -> NSDictionary? {
+		var dictionary: NSDictionary?
 		
 		// Clear list of any possible old objects
 		if (fresh) { NSManagedObject.clearTraversedObjects() }
 		
 		// Start archiving process, but only if this part of the object graph has not already been visited
 		if !hasBeenTraversed() {
-			archiveDictionary = encoded()
+			dictionary = encoded()
 		}
 		
 		// Clear list of traversed objects to free up memory
 		if fresh { NSManagedObject.clearTraversedObjects() }
 		
-		return archiveDictionary
+		return dictionary
 	}
 }
 

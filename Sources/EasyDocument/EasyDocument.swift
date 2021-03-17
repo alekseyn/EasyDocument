@@ -5,7 +5,7 @@
 //  Created by Aleksey Novicov on 12/15/18.
 //  Copyright © 2018 Yodel Code LLC. All rights reserved.
 //
-// To use EasyDocument, create your own custom class and adopt the EasyDocument protocol.
+// To use EasyDocument, create your own custom class by subclassing EasyDocument.
 // See CustomEasyDocument in EasyDocumentTests for an example.
 
 import Foundation
@@ -194,7 +194,7 @@ public extension EasyDocumentProtocol {
 		var archivedObjects: [NSDictionary] = []
 		
 		for managedObject in managedObjects {
-			if let archivedObject = managedObject.archiveAsDictionary() {
+			if let archivedObject = managedObject.dictionaryArchive() {
 				archivedObjects.append(archivedObject)
 			}
 		}

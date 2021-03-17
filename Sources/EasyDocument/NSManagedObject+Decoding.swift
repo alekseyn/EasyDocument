@@ -130,7 +130,7 @@ extension NSManagedObject {
 	// Use as: let duplicateObject: Example? = managedObject.duplicate()
 	
 	public func duplicate<T: NSManagedObject>() -> T? {
-		if let archive = archiveAsDictionary() {
+		if let archive = dictionaryArchive() {
 			let managedObjects = managedObjectContext?.insertedObjects(from: [archive])
 
 			return managedObjects?.first as? T
