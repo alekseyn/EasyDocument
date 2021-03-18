@@ -26,11 +26,11 @@ public protocol EasyDocumentTemplate {
 // MARK: - EasyDocument Protocol
 
 public protocol EasyDocumentProtocol: EasyDocumentTemplate {
-	func archiveManagedObjects(_ managedObjects: [NSManagedObject], to url: URL?) throws
+	func archiveManagedObjects(_ managedObjects: [NSManagedObject], to url: URL, overwrite: Bool) throws
 	@discardableResult func insertedManagedObjects(from url: URL, into managedObjectContext: NSManagedObjectContext) -> [NSManagedObject]?
 
 	func createArchive(of managedObjects: [NSManagedObject], inChunksOf chunkSize: Int, savedTo directory: String, in container: String?, progress: ArchiveProgressHandler?) throws
-	func saveFromArchive(using directory: String, in container: String?, into managedObjectContext: NSManagedObjectContext, progress: ArchiveProgressHandler?)
+	func saveFromArchive(directory: String, in container: String?, into managedObjectContext: NSManagedObjectContext, progress: ArchiveProgressHandler?)
 	func clearArchive(directory: String, in container: String?)
 	func hasArchive(using directory: String, in container: String?) -> Bool
 }
@@ -99,7 +99,7 @@ public extension EasyDocumentProtocol {
 	
 	/// Restore from archive
 	
-	func saveFromArchive(using directory: String = Self.defaultDirectoryName, in container: String? = nil, into managedObjectContext: NSManagedObjectContext, progress: ArchiveProgressHandler? = nil) {
+	func saveFromArchive(directory: String = Self.defaultDirectoryName, in container: String? = nil, into managedObjectContext: NSManagedObjectContext, progress: ArchiveProgressHandler? = nil) {
 		do {
 			let cachesFile = try CachesFile(directoryName: directory, filename: Self.defaultFilename, containerName: container)
 			defer {
@@ -113,6 +113,8 @@ public extension EasyDocumentProtocol {
 				autoreleasepool {
 					if let importObjects = self.insertedManagedObjects(from: fileURL, into: managedObjectContext) {
 						do {
+							// If permanent IDs are not obtained, diffable data source may not function as expected
+							try managedObjectContext.obtainPermanentIDs(for: importObjects)
 							try managedObjectContext.save()
 						}
 						catch {
@@ -145,11 +147,9 @@ public extension EasyDocumentProtocol {
 		}
 	}
 
-	func archiveManagedObjects(_ managedObjects: [NSManagedObject], to url: URL?) throws {
-		guard let url = url else { return }
-		
+	func archiveManagedObjects(_ managedObjects: [NSManagedObject], to url: URL, overwrite: Bool = true) throws {
 		try autoreleasepool {
-			try save(archive: archive(managedObjects), to: url, overwrite: true)
+			try save(archive: archive(managedObjects), to: url, overwrite: overwrite)
 		}
 	}
 	
@@ -166,12 +166,6 @@ public extension EasyDocumentProtocol {
 			}
 		}
 		return insertedObjects
-	}
-	
-	private func archiveManagedObjects(_ managedObjects: [NSManagedObject], to url: URL, overwrite: Bool) throws {
-		try autoreleasepool {
-			try save(archive: archive(managedObjects), to: url, overwrite: overwrite)
-		}
 	}
 	
 	private func plist(from url: URL) -> NSDictionary? {
@@ -250,7 +244,9 @@ open class EasyDocument: NSObject, EasyDocumentProtocol {
 	var url: URL?
 	var documentObjects: [NSManagedObject]?
 
-	init(url: URL, using context: NSManagedObjectContext) {
+	@discardableResult
+	public init(fromURL url: URL, into context: NSManagedObjectContext) {
+		self.url = url
 		super.init()
 		
 		// Ingest managedObjects from an EasyDocument with a file URL
@@ -259,7 +255,9 @@ open class EasyDocument: NSObject, EasyDocumentProtocol {
 		}
 	}
 	
-	init(managedObjects: [NSManagedObject]) throws {
+	@discardableResult
+	public init(managedObjects: [NSManagedObject], toURL url: URL) throws {
+		self.url = url
 		super.init()
 		
 		// Archive and save to disk as an EasyDocument
@@ -275,7 +273,15 @@ open class EasyDocument: NSObject, EasyDocumentProtocol {
 	}
 	
 	open func postProcess(managedObjects: [NSManagedObject], in context: NSManagedObjectContext) {
-		// Custom modification, if needed
+		do {
+			// If permanent IDs are not obtained, diffable data source may not function as expected
+			try context.obtainPermanentIDs(for: managedObjects)
+		}
+		catch {
+			print(error.localizedDescription)
+		}
+
+		// Override for custom modification. Calling super.postProcess() is recommended if using diffable data sources.
 	}
 
 	// MARK: - EasyDocumentTemplate Abstraction
