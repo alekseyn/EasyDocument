@@ -11,23 +11,27 @@ import CoreData
 
 extension NSManagedObjectContext {
 	public func insertedObjects(from array: [NSDictionary]) -> [NSManagedObject] {
-		var objects: [NSManagedObject] = []
+		let topLevelEntityName = array.first?.entityName
+		assert(topLevelEntityName != nil, "First inserted object entity name is missing.")
+
+		// Make a copy of objects already inserted in the managed object context
+		let previouslyInsertedObjects = Array(insertedObjects)
 		
+
+		NSManagedObject.clearLeafNodes()
+		NSManagedObject.clearTraversedObjects()
+
 		for dictionary in array {
-			NSManagedObject.clearLeafNodes()
-			NSManagedObject.clearTraversedObjects()
-			
-			if let newObject = dictionary.inflate(into: self) {
-				objects.append(newObject)
-			}
-			resolveLeafNodes()
+			dictionary.inflate(into: self)
 		}
-		
+		resolveLeafNodes()
+
 		// Clear out memory
 		NSManagedObject.clearLeafNodes()
 		NSManagedObject.clearTraversedObjects()
 
-		return objects
+		// Return all of the fresh top level objects that have been inserted
+		return insertedObjects.subtracting(previouslyInsertedObjects).filter({ $0.entity.name == topLevelEntityName })
 	}
 	
 	func entityDescription(for entityName: String) -> NSEntityDescription? {
@@ -78,4 +82,10 @@ extension NSManagedObjectContext {
 	}
 }
 
+// MARK: - Array
 
+extension Array where Element: Equatable {
+	func subtracting(_ array: Array<Element>) -> Array<Element> {
+		self.filter { !array.contains($0) }
+	}
+}

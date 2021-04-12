@@ -31,6 +31,7 @@ extension NSDictionary {
 			&& (allValues.first as? String) != nil
 	}
 	
+	@discardableResult
 	func inflate(into context: NSManagedObjectContext?) ->NSManagedObject? {
 		guard let context = context else { return nil }
 		

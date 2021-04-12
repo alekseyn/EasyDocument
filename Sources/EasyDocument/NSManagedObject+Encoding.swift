@@ -169,7 +169,7 @@ extension NSManagedObject {
 		}
 	}
 	
-	private func encoded() -> NSDictionary {
+	fileprivate func encoded() -> NSDictionary {
 		let dictionary = NSMutableDictionary(capacity: entity.properties.count)
 		
 		// Set control parameters (archiveID set automatically)
@@ -210,6 +210,35 @@ extension NSManagedObject {
 		if fresh { NSManagedObject.clearTraversedObjects() }
 		
 		return dictionary
+	}
+}
+
+// MARK: - Array
+
+public extension Array where Element: NSManagedObject {
+	func archive(fresh: Bool = true) -> [NSDictionary] {
+		var archivedObjects: [NSDictionary] = []
+		let firstEntityName = first?.entity.name
+
+		guard !self.isEmpty else { return archivedObjects }
+		assert(firstEntityName != nil, "First archivable object's entity name is missing.")
+
+		let haveCommonEntityName = self.reduce(true, { $0 && ($1.entity.name == firstEntityName) })
+		assert(haveCommonEntityName, "All top-level archivable objects must be of the same entity.")
+		
+		// Clear list of any possible old objects
+		if (fresh) { NSManagedObject.clearTraversedObjects() }
+
+		for managedObject in self {
+			if !managedObject.hasBeenTraversed() {
+				archivedObjects.append(managedObject.encoded())
+			}
+		}
+		
+		// Clear list of traversed objects to free up memory
+		if fresh { NSManagedObject.clearTraversedObjects() }
+
+		return archivedObjects
 	}
 }
 
