@@ -1,6 +1,8 @@
 import XCTest
 @testable import EasyDocument
 
+#if !os(macOS)
+
 final class EasyDocumentTests: XCTestCase {
 
 	override func setUpWithError() throws {
@@ -72,3 +74,4 @@ final class EasyDocumentTests: XCTestCase {
 		("testDocument", testDocument),
     ]
 }
+#endif

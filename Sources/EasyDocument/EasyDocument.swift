@@ -9,7 +9,6 @@
 // See CustomEasyDocument in EasyDocumentTests for an example.
 
 import Foundation
-import UIKit
 import CoreData
 
 public typealias ArchiveProgressHandler = (Int) -> Swift.Void
@@ -26,6 +25,8 @@ public protocol EasyDocumentTemplate {
 // MARK: - EasyDocument Protocol
 
 public protocol EasyDocumentProtocol: EasyDocumentTemplate {
+	var compressionAlorithm: NSData.CompressionAlgorithm? { get }
+	
 	func archiveManagedObjects(_ managedObjects: [NSManagedObject], to url: URL, overwrite: Bool) throws
 	@discardableResult func insertedManagedObjects(from url: URL, into managedObjectContext: NSManagedObjectContext) -> [NSManagedObject]?
 
@@ -171,7 +172,13 @@ public extension EasyDocumentProtocol {
 	private func plist(from url: URL) -> NSDictionary? {
 		if let data = FileManager.default.contents(atPath: url.path) {
 			do {
-				let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+				var dataToDeserialize = data
+				
+				if compressionAlorithm != nil {
+					let decompressedData = try (data as NSData).decompressed(using: compressionAlorithm!)
+					dataToDeserialize = decompressedData as Data
+				}
+				let plist = try PropertyListSerialization.propertyList(from: dataToDeserialize, options: [], format: nil)
 				
 				if let dictionary = plist as? NSDictionary {
 					return dictionary
@@ -217,14 +224,25 @@ public extension EasyDocumentProtocol {
 				try autoreleasepool {
 					let plist = try PropertyListSerialization.data(fromPropertyList: archive, format: .binary, options: 0)
 					
-					// Overwrite the existing file if it exists
-					if overwrite {
-						try plist.write(to: updatedURL, options: Data.WritingOptions.atomic)
+					do {
+						var dataToSave = plist
+						
+						if compressionAlorithm != nil {
+							let compressedData = try (plist as NSData).compressed(using: compressionAlorithm!)
+							dataToSave = compressedData as Data
+						}
+						
+						// Overwrite the existing file if it exists
+						if overwrite {
+							try dataToSave.write(to: updatedURL, options: Data.WritingOptions.atomic)
+						}
+						else {
+							try dataToSave.write(to: updatedURL, options: Data.WritingOptions.withoutOverwriting)
+						}
+						successful = true
+					} catch {
+						print(error.localizedDescription)
 					}
-					else {
-						try plist.write(to: updatedURL, options: Data.WritingOptions.withoutOverwriting)
-					}
-					successful = true
 				}
 			}
 			catch CocoaError.fileWriteFileExists {
@@ -243,9 +261,11 @@ open class EasyDocument: NSObject, EasyDocumentProtocol {
 	
 	var url: URL?
 	var documentObjects: [NSManagedObject]?
-
+	public var compressionAlorithm: NSData.CompressionAlgorithm?
+	
 	@discardableResult
-	public init(fromURL url: URL, into context: NSManagedObjectContext) {
+	public init(fromURL url: URL, into context: NSManagedObjectContext, compressionAlgorithm: NSData.CompressionAlgorithm? = nil) {
+		self.compressionAlorithm = compressionAlgorithm
 		self.url = url
 		super.init()
 		
@@ -256,7 +276,8 @@ open class EasyDocument: NSObject, EasyDocumentProtocol {
 	}
 	
 	@discardableResult
-	public init(managedObjects: [NSManagedObject], toURL url: URL) throws {
+	public init(managedObjects: [NSManagedObject], toURL url: URL, compressionAlgorithm: NSData.CompressionAlgorithm? = nil) throws {
+		self.compressionAlorithm = compressionAlgorithm
 		self.url = url
 		super.init()
 		

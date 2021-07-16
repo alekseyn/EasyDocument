@@ -9,7 +9,6 @@
 
 import Foundation
 import EasyDocument
-import UIKit
 import CoreData
 
 // Your application should support opening files, and should declare whether it supports

@@ -8,7 +8,10 @@
 
 import Foundation
 import CoreData
+
+#if !os(macOS)
 import UIKit
+#endif
 
 extension Event {
 
@@ -17,7 +20,9 @@ extension Event {
     }
 
     @NSManaged public var anyBoolean: Bool
+	#if !os(macOS)
     @NSManaged public var anyColor: UIColor?
+	#endif
     @NSManaged public var anyDuration: Double
     @NSManaged public var anyInt16: Int16
     @NSManaged public var anyOptionalData: Data?

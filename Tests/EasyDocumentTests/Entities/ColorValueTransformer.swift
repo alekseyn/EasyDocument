@@ -8,6 +8,8 @@
 // REF: https://www.kairadiagne.com/2020/01/13/nssecurecoding-and-transformable-properties-in-core-data.html
 
 import Foundation
+
+#if !os(macOS)
 import UIKit
 
 @objc(UIColorValueTransformer)
@@ -31,3 +33,4 @@ final class ColorValueTransformer: NSSecureUnarchiveFromDataTransformer {
 		ValueTransformer.setValueTransformer(transformer, forName: name)
 	}
 }
+#endif
