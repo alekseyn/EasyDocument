@@ -17,12 +17,16 @@ extension NSManagedObjectContext {
 		// Make a copy of objects already inserted in the managed object context
 		let previouslyInsertedObjects = Array(insertedObjects)
 		
-
+		// Track order of inflated top level objects
+		var inflatedObjects = [NSManagedObject]()
+		
 		NSManagedObject.clearLeafNodes()
 		NSManagedObject.clearTraversedObjects()
 
 		for dictionary in array {
-			dictionary.inflate(into: self)
+			if let managedObject = dictionary.inflate(into: self) {
+				inflatedObjects.append(managedObject)
+			}
 		}
 		resolveLeafNodes()
 
@@ -31,7 +35,10 @@ extension NSManagedObjectContext {
 		NSManagedObject.clearTraversedObjects()
 
 		// Return all of the fresh top level objects that have been inserted
-		return insertedObjects.subtracting(previouslyInsertedObjects).filter({ $0.entity.name == topLevelEntityName })
+		let topLevelObjects = insertedObjects.subtracting(previouslyInsertedObjects).filter({ $0.entity.name == topLevelEntityName })
+		assert(inflatedObjects.count == topLevelObjects.count, "Unexpected failure after inflating top level objects")
+		
+		return inflatedObjects
 	}
 	
 	func entityDescription(for entityName: String) -> NSEntityDescription? {
