@@ -53,7 +53,9 @@ extension NSManagedObject {
 			setValue(decodedValue, forKey: key)
 		}
 		catch ArchiveDecodingError.unknownAttribute(key) {
-			assertionFailure("Decoded managed value unknown for " + key)
+			// No need to assert a failure if a particular attribute
+			// is missing. The default value of the model will be used.
+			print("Decoded managed value unknown for " + key)
 		}
 		catch ArchiveDecodingError.dataCorrupted(key) {
 			assertionFailure("Decoded managed value corrupted for " + key)
